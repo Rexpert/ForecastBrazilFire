@@ -6,6 +6,8 @@
     - Moving Dot in Timeline
   - combine to GIF
 
+- Line Chart
+
 - Forecasting Method
   - Naive
   - Average
