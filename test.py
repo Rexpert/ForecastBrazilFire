@@ -7,7 +7,7 @@ import math
 import os
 
 # Parse df to the function
-df = pd.read_csv("./data/amazon.csv", encoding="ISO-8859-1")
+df = pd.read_csv("./data/amazon.csv", encoding="ISO-8859-1", thousands=".")
 
 # Read map data: shape file for Brazil
 map_df = gpd.read_file("data/brazil-shapefile/Central-West Region_AL3-AL4.shp")
@@ -98,35 +98,38 @@ state_por = state_por.iloc[index]
 
 df.name = [x for item in state_por for x in repeat(item, 239)]
 
+# Finding mean of each month in a year instead of total up all month, because there are missing value for Dec 2017
+wide_df = df.copy() \
+    .groupby(["year", "name"]) \
+        .sum() \
+            .unstack(level = 0)
+wide_df.columns = wide_df.columns.droplevel()
+wide_df = wide_df.reset_index()
+
 '''# Try plot map with 1 example
-right = df.query("year == 2017 and month == '11'")[["name", "number"]]
-plot_df = map_df.copy()
-plot_df = pd.merge(plot_df, right, on = "name", how = "left")
+left = map_df.copy()
+right = wide_df.iloc[:,0:2]
+plot_df = pd.merge(left, right, on = "name", how = "left")
 
-fig = plot_df.plot(column = "number", cmap = "Purples", figsize = (10, 10), linewidth = 0.8, edgecolor = "0.8", vmin = 0, vmax = 900, legend = True, norm = plt.Normalize(vmin = 0, vmax = 900))
+vmin = wide_df.iloc[:,1:].min().min()
+vmin = int(math.floor(vmin/1000))*1000
+vmax = wide_df.iloc[:,1:].max().max()
+vmax = int(math.ceil(vmax/1000))*1000
 
-## Legend with no upper bound
-# fig = plot_df.plot(column = "number", cmap = "Purples", figsize = (10, 10), linewidth = 0.8, edgecolor = "0.8", vmin = 0, vmax = 900, norm = plt.Normalize(vmin = 0, vmax = 900))
-# ax = plt.gca()
-# im = ax.imshow(np.arange(0,1000).reshape(10,100), cmap = "Purples")
-# plt.colorbar(im,fraction=0.046, pad=0.04)
+fig = plot_df.plot(column = 1998, cmap = "Purples", figsize = (10, 10), linewidth = 0.8, edgecolor = "0.8", vmin = vmin, vmax = vmax, legend = True, norm = plt.Normalize(vmin = vmin, vmax = vmax))
 
 fig.axis("off")
 fig.set_title('Brazil Forest Fire', fontdict={'fontsize': '25', 'fontweight' : '3'})
 
-mon = int(str(201711)[4:])
-year = str(201711)[:4]
-eng_month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-annotation = eng_month[mon-1] + " " + year
-x_coord = 2 * (int(year) + mon/12) - 4071
-fig.annotate(annotation, xy=(.3, .4), xycoords='figure fraction', horizontalalignment='right',  verticalalignment ='top', fontsize=35)
+year = 2017
+x_coord = 2 * year - 4071
 fig.plot(x_coord, -36, "o", color = "#69549E", markersize = 20, alpha = 0.5, clip_on=False, zorder = 100)
-fig.text(x_coord, -39, annotation, horizontalalignment = "center", fontsize = 15)
+fig.text(x_coord, -39, str(year), horizontalalignment = "center", fontsize = 15)
 
 plt.ylim(-35,7)
 plt.xlim(-75,-34)
 
-for n in range(1, 21) :
+for n in range(1, 20) :
     x_coord = -75 + (n - 1) * 2
     color = '#69549E' if n % 2 else '#E8E7EF'
     plt.hlines(-36, x_coord, x_coord + 2, colors=color, lw=5, clip_on = False, zorder = 100)
@@ -134,67 +137,53 @@ for n in range(1, 21) :
 plt.show()
 '''
 
-## Plot multiple maps
-vmin = int(math.floor(min(df.number)/100))*100
-vmax = int(math.ceil(max(df.number)/100))*100
+'''## Plot multiple maps
 
-df["time"] = df.year.astype(str) + df.month
-df["time"] = df.time.astype(int)
-df = df.sort_values("time")
+left = map_df.copy()
+right = wide_df.copy()
+plot_df = pd.merge(left, right, on = "name", how = "left")
 
-wide_df = df.copy()
-wide_df = wide_df[["time", "name", "number"]]
-wide_df = wide_df.pivot(index="name", columns="time", values="number")
+vmin = wide_df.iloc[:,1:].min().min()
+vmin = int(math.floor(vmin/1000))*1000
+vmax = wide_df.iloc[:,1:].max().max()
+vmax = int(math.ceil(vmax/1000))*1000
 
-plot_df = pd.merge(map_df, wide_df, on="name", how="left")
+year_list = wide_df.columns[1:]
 
-year_list = wide_df.columns
-
-eng_month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-for now in year_list :
-    fig = plot_df.plot(column = now, cmap = "Purples", figsize = (10, 10), linewidth = 0.8, edgecolor = "0.8", vmin = vmin, vmax = vmax, legend = True, norm = plt.Normalize(vmin = vmin, vmax = vmax))
-
+for year in year_list :
+    fig = plot_df.plot(column = year, cmap = "Purples", figsize = (10, 10), linewidth = 0.8, edgecolor = "0.8", vmin = vmin, vmax = vmax, legend = True, norm = plt.Normalize(vmin = vmin, vmax = vmax))
+    
     fig.axis("off")
     fig.set_title('Brazil Forest Fire', fontdict={'fontsize': '25', 'fontweight' : '3'})
-
-    mon = int(str(now)[4:])
-    year = str(now)[:4]
-    annotation = eng_month[mon-1] + " " + year
-    x_coord = 2 * (int(year) + mon/12) - 4071
-    fig.annotate(annotation, xy=(.3, .4), xycoords='figure fraction', horizontalalignment='right',  verticalalignment ='top', fontsize=35)
+    
+    x_coord = 2 * year - 4071
     fig.plot(x_coord, -36, "o", color = "#69549E", markersize = 20, alpha = 0.5, clip_on=False, zorder = 100)
-    fig.text(x_coord, -39, annotation, horizontalalignment="center", fontsize=15)
+    fig.text(x_coord, -39, str(year), horizontalalignment = "center", fontsize = 15)
 
     plt.ylim(-35,7)
     plt.xlim(-75,-34)
 
-    for n in range(1, 21) :
+    for n in range(1, 20) :
         x_coord = -75 + (n - 1) * 2
         color = '#69549E' if n % 2 else '#E8E7EF'
         plt.hlines(-36, x_coord, x_coord + 2, colors=color, lw=5, clip_on = False, zorder = 100)
 
-    filepath = os.path.join("maps", str(now)+'.png')
+    filepath = os.path.join("maps", str(year)+'.png')
     chart = fig.get_figure()
     chart.savefig(filepath, dpi=300)
 
     plt.close()
 
 print("done")
+'''
 
-
-
-from PIL import Image
+import os
+import subprocess
 import glob
- 
-# Create the frames
-frames = []
-imgs = glob.glob("maps/*.png")[:5]
-for i in imgs:
-    new_frame = Image.open(i)
-    frames.append(new_frame)
- 
-# Save into a GIF file that loops forever
-frames[0].save('png_to_gif.gif', format='GIF',
-               append_images=frames[1:],
-               save_all=True,
-               duration=150, loop=0)
+
+# path = 'maps'
+# os.chdir(path)
+imgs = glob.glob('*.png')
+
+cmd = ['magick','convert', '-loop', '0', '-delay', '40'] + imgs + ['magicksmap.gif']
+subprocess.call(cmd)
