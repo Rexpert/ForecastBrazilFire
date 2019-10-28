@@ -5,6 +5,8 @@ import geopandas as gpd
 import pandas as pd
 import math
 import os
+import subprocess
+import glob
 
 # Parse df to the function
 df = pd.read_csv("./data/amazon.csv", encoding="ISO-8859-1", thousands=".")
@@ -12,7 +14,7 @@ df = pd.read_csv("./data/amazon.csv", encoding="ISO-8859-1", thousands=".")
 # Read map data: shape file for Brazil
 map_df = gpd.read_file("data/brazil-shapefile/Central-West Region_AL3-AL4.shp")
 
-''' Temporary Disable
+'''# Temporary Disable
 # Understand the data structure
 df.shape
 df.info()
@@ -31,7 +33,7 @@ date = date.str.extract(r"(\d+)")  # Extract year from date
 date = date.iloc[:, 0]            # Transform to Series type
 date = date.astype(year.dtype)    # Convert String to int
 
-not_same = date != year
+not_same = (date != year)
 not_same.any()                    # All years in date is same as year column
 
 # Check if month & day is all equal 1
@@ -45,15 +47,15 @@ not1.any()                               # All values in (column 0 & 1) is 1
 df = df.iloc[:, 0:4]
 
 
-# 2. Month: Portugese -> Number
+# 2. Deal with time column
 month = list(range(1, 13))
-month = list(map(lambda x: str(x).zfill(2), month))
-foo = pd.DataFrame({"month": df.iloc[:, 2].unique(),
-                    "mmm": month})
-
+foo = pd.DataFrame({"month": df.iloc[:, 2].unique(), "mmm": month})
 df = pd.merge(df, foo, on="month", how="left")
-df = df[["year", "mmm", "state", "number"]]
-df.columns = ["year", "month", "name", "number"]
+df["period"] = df.apply(lambda t: pd.Period(
+    year=t["year"], month=t["mmm"], freq="M"), axis=1)
+
+df = df[["period", "state", "number"]]
+
 
 # 3. Duplicate Data
 map_df = map_df.iloc[5:, :]
@@ -62,7 +64,7 @@ state_eng = df.iloc[:, 2].unique()
 (len(state_por), len(state_eng))  # different length
 
 # detect the duplication by counting the entries
-df["name"].value_counts()
+df["state"].value_counts()
 
 # Most of the state has 239 entries, so there may exist some duplicate entries
 # By comparing with state_por, the following entries are label wrongly:
@@ -78,53 +80,57 @@ df["name"].value_counts()
 # Mato Grosso   = 239 * 2 = 478
 # Paraiba       = 239 * 2 = 478
 # The only duplication occured in Alagoas:
-d = df[df.name == "Alagoas"]
+d = df[df.state == "Alagoas"]
 duplicate = d[d.duplicated()].index
 
 df = df.drop(index=duplicate, axis=1)
-df["name"].value_counts()  # Check for deletion
+df["state"].value_counts()  # Check for deletion
 
-# 4. State: Replace with actual portugese name
+
+# 4. State: Replace with actual portugese state name
 # Check for order in df.state
-df.name.unique()
+df.state.unique()
 state_por
 
 # Found inconsistent order in df.state compared to state_por
 # The order for Rio, Mato Grosso and Paraiba was assumed followed alphabetical order
-# The EspÃ­rito Santo & Federal District should be reversed:
+# The order EspÃ­rito Santo & Federal District should be reversed:
 index = list(range(27))
 index[6], index[7] = index[7], index[6]
 state_por = state_por.iloc[index]
 
-df.name = [x for item in state_por for x in repeat(item, 239)]
+df.state = [x for item in state_por for x in repeat(item, 239)]
+
 
 # Finding mean of each month in a year instead of total up all month, because there are missing value for Dec 2017
-wide_df = df.copy() \
-    .groupby(["year", "name"]) \
-        .sum() \
-            .unstack(level = 0)
+wide_df = df.copy()
+wide_df["year"] = wide_df.period.map(lambda t: t.year)
+wide_df = wide_df.groupby(["year", "state"])
+wide_df = wide_df.sum().unstack(level=0)
 wide_df.columns = wide_df.columns.droplevel()
 wide_df = wide_df.reset_index()
 
-'''# Try plot map with 1 example
+'''# Temporary Disable
+# Try plot map with 1 example
 left = map_df.copy()
-right = wide_df.iloc[:,0:2]
-plot_df = pd.merge(left, right, on = "name", how = "left")
+right = wide_df.copy().iloc[:,0:2]
+right.rename(columns={"state" : "name"}, inplace=True)
+plot_df = pd.merge(left, right, on="name", how="left")
 
 vmin = wide_df.iloc[:,1:].min().min()
 vmin = int(math.floor(vmin/1000))*1000
 vmax = wide_df.iloc[:,1:].max().max()
 vmax = int(math.ceil(vmax/1000))*1000
 
-fig = plot_df.plot(column = 1998, cmap = "Purples", figsize = (10, 10), linewidth = 0.8, edgecolor = "0.8", vmin = vmin, vmax = vmax, legend = True, norm = plt.Normalize(vmin = vmin, vmax = vmax))
+year = 2017
+fig = plot_df.plot(column=year, cmap="Purples", figsize=(10, 10), linewidth=0.8, edgecolor="0.8", vmin=vmin, vmax=vmax, legend=True, norm=plt.Normalize(vmin=vmin, vmax=vmax))
 
 fig.axis("off")
 fig.set_title('Brazil Forest Fire', fontdict={'fontsize': '25', 'fontweight' : '3'})
 
-year = 2017
 x_coord = 2 * year - 4071
-fig.plot(x_coord, -36, "o", color = "#69549E", markersize = 20, alpha = 0.5, clip_on=False, zorder = 100)
-fig.text(x_coord, -39, str(year), horizontalalignment = "center", fontsize = 15)
+fig.plot(x_coord, -36, "o", color="#69549E", markersize=20, alpha=0.5, clip_on=False, zorder=100)
+fig.text(x_coord, -39, str(year), horizontalalignment="center", fontsize=15)
 
 plt.ylim(-35,7)
 plt.xlim(-75,-34)
@@ -132,16 +138,17 @@ plt.xlim(-75,-34)
 for n in range(1, 20) :
     x_coord = -75 + (n - 1) * 2
     color = '#69549E' if n % 2 else '#E8E7EF'
-    plt.hlines(-36, x_coord, x_coord + 2, colors=color, lw=5, clip_on = False, zorder = 100)
+    plt.hlines(-36, x_coord, x_coord + 2, colors=color, lw=5, clip_on=False, zorder=100)
 
 plt.show()
 '''
 
-'''## Plot multiple maps
-
+'''# Temporary Disable
+## Plot multiple maps
 left = map_df.copy()
 right = wide_df.copy()
-plot_df = pd.merge(left, right, on = "name", how = "left")
+right.rename(columns={"state" : "name"}, inplace=True)
+plot_df = pd.merge(left, right, on="name", how="left")
 
 vmin = wide_df.iloc[:,1:].min().min()
 vmin = int(math.floor(vmin/1000))*1000
@@ -151,14 +158,14 @@ vmax = int(math.ceil(vmax/1000))*1000
 year_list = wide_df.columns[1:]
 
 for year in year_list :
-    fig = plot_df.plot(column = year, cmap = "Purples", figsize = (10, 10), linewidth = 0.8, edgecolor = "0.8", vmin = vmin, vmax = vmax, legend = True, norm = plt.Normalize(vmin = vmin, vmax = vmax))
+    fig = plot_df.plot(column=year, cmap="Purples", figsize=(10, 10), linewidth=0.8, edgecolor="0.8", vmin=vmin, vmax=vmax, legend=True, norm=plt.Normalize(vmin=vmin, vmax=vmax))
     
     fig.axis("off")
     fig.set_title('Brazil Forest Fire', fontdict={'fontsize': '25', 'fontweight' : '3'})
     
     x_coord = 2 * year - 4071
-    fig.plot(x_coord, -36, "o", color = "#69549E", markersize = 20, alpha = 0.5, clip_on=False, zorder = 100)
-    fig.text(x_coord, -39, str(year), horizontalalignment = "center", fontsize = 15)
+    fig.plot(x_coord, -36, "o", color="#69549E", markersize=20, alpha=0.5, clip_on=False, zorder=100)
+    fig.text(x_coord, -39, str(year), horizontalalignment="center", fontsize=15)
 
     plt.ylim(-35,7)
     plt.xlim(-75,-34)
@@ -166,7 +173,7 @@ for year in year_list :
     for n in range(1, 20) :
         x_coord = -75 + (n - 1) * 2
         color = '#69549E' if n % 2 else '#E8E7EF'
-        plt.hlines(-36, x_coord, x_coord + 2, colors=color, lw=5, clip_on = False, zorder = 100)
+        plt.hlines(-36, x_coord, x_coord + 2, colors=color, lw=5, clip_on=False, zorder=100)
 
     filepath = os.path.join("maps", str(year)+'.png')
     chart = fig.get_figure()
@@ -177,13 +184,29 @@ for year in year_list :
 print("done")
 '''
 
-import os
-import subprocess
-import glob
-
+'''# Temporary Disable
+## Output images to Gif using image magick
 # path = 'maps'
 # os.chdir(path)
 imgs = glob.glob('*.png')
 
 cmd = ['magick','convert', '-loop', '0', '-delay', '40'] + imgs + ['magicksmap.gif']
 subprocess.call(cmd)
+'''
+
+# Trend of forest fire
+df.groupby(["period"]).sum().plot()
+plt.show()
+
+# In table form
+wide_df = df.copy()
+wide_df["year"] = wide_df.period.map(lambda t: t.year)
+wide_df["month"] = wide_df.period.map(lambda t: t.month)
+wide_df = wide_df.groupby(["year", "month"])
+wide_df = wide_df.sum().unstack()
+wide_df.columns = wide_df.columns.droplevel()
+
+# Seasonal of forest fire
+seed = 111
+wide_df.sample(n=4, random_state=seed).T.plot()
+plt.show()
