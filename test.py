@@ -12,13 +12,17 @@ import glob
 df = pd.read_csv("./data/amazon.csv", encoding="ISO-8859-1", thousands=".")
 
 # Read map data: shape file for Brazil
-map_df = gpd.read_file("data/brazil-shapefile/Central-West Region_AL3-AL4.shp")
+map_df = gpd.read_file("./data/brazil-shapefile/Central-West Region_AL3-AL4.shp")
 
 '''# Temporary Disable
 # Understand the data structure
-df.shape
+print("The data has " + str(df.shape[0]) + " rows, and " + str(df.shape[1]) + " columns\n\n")
+print("Overview on the data type of each column: \n")
 df.info()
+print("\n\n")
+print("Check for Missing Values: \n")
 df.isna().sum()  # check for Na
+print("\n\n")
 df.head()
 df.describe()
 df["month"].nunique()
@@ -46,14 +50,12 @@ not1.any()                               # All values in (column 0 & 1) is 1
 # The date column is duplicated, hence it is allowed to drop date column
 df = df.iloc[:, 0:4]
 
-
 # 2. Deal with time column
 month = list(range(1, 13))
 foo = pd.DataFrame({"month": df.iloc[:, 2].unique(), "mmm": month})
 df = pd.merge(df, foo, on="month", how="left")
 df["period"] = df.apply(lambda t: pd.Period(
     year=t["year"], month=t["mmm"], freq="M"), axis=1)
-
 df = df[["period", "state", "number"]]
 
 
@@ -122,7 +124,7 @@ vmin = int(math.floor(vmin/1000))*1000
 vmax = wide_df.iloc[:,1:].max().max()
 vmax = int(math.ceil(vmax/1000))*1000
 
-year = 2017
+year = 1998
 fig = plot_df.plot(column=year, cmap="Purples", figsize=(10, 10), linewidth=0.8, edgecolor="0.8", vmin=vmin, vmax=vmax, legend=True, norm=plt.Normalize(vmin=vmin, vmax=vmax))
 
 fig.axis("off")
@@ -144,7 +146,7 @@ plt.show()
 '''
 
 '''# Temporary Disable
-## Plot multiple maps
+# Plot multiple maps
 left = map_df.copy()
 right = wide_df.copy()
 right.rename(columns={"state" : "name"}, inplace=True)
@@ -185,9 +187,7 @@ print("done")
 '''
 
 '''# Temporary Disable
-## Output images to Gif using image magick
-# path = 'maps'
-# os.chdir(path)
+# Output images to Gif using image magick
 imgs = glob.glob('*.png')
 
 cmd = ['magick','convert', '-loop', '0', '-delay', '40'] + imgs + ['magicksmap.gif']
