@@ -194,8 +194,9 @@ cmd = ['magick','convert', '-loop', '0', '-delay', '40'] + imgs + ['magicksmap.g
 subprocess.call(cmd)
 '''
 
-# Trend of forest fire
+# Plot of forest fire
 df.groupby(["period"]).sum().plot()
+plt.title("Monthly Report on Number of Brazil Forest Fire")
 plt.show()
 
 # In table form
@@ -206,7 +207,16 @@ wide_df = wide_df.groupby(["year", "month"])
 wide_df = wide_df.sum().unstack()
 wide_df.columns = wide_df.columns.droplevel()
 
+# Overall Trend
+by_year = df.copy()
+by_year["year"] = by_year.period.map(lambda t: t.year)
+by_year = by_year.groupby(["year"]).sum().plot()
+plt.title("Yearly Report on Number of Brazil Forest Fire")
+plt.xticks(np.arange(1998, 2017, 2))
+plt.show()
+
 # Seasonal of forest fire
 seed = 111
 wide_df.sample(n=4, random_state=seed).T.plot()
+plt.title("Seasonal Plot: Brazil Forest Fire (4 samples)")
 plt.show()
