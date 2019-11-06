@@ -12,7 +12,8 @@ import glob
 df = pd.read_csv("./data/amazon.csv", encoding="ISO-8859-1", thousands=".")
 
 # Read map data: shape file for Brazil
-map_df = gpd.read_file("./data/brazil-shapefile/Central-West Region_AL3-AL4.shp")
+map_df = gpd.read_file(
+    "./data/brazil-shapefile/Central-West Region_AL3-AL4.shp")
 
 '''# Temporary Disable
 # Understand the data structure

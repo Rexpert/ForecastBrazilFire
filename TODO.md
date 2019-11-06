@@ -4,14 +4,15 @@
     - ~~Moving Dot in Timeline~~
   - ~~combine to GIF~~
 
-- ~~Line Chart~~
-
-- Autocorrelation Analysis (Stationary: Random Walk?)
-  - Trend
-  - Seasonal
-  - ACF plot (diff plot)
-
 - Time Component Decomposition Analysis
+  - ~~Trend: ~~
+    - ~~Line charts~~
+  - Seasonal & stationarity
+    - ~~Seasonal plot~~
+    - ACF Plot
+    - PACF Plot
+  - Cycle:
+    - Periodogram
   - Decomposition plot
   - Type of Series
     - Additive
