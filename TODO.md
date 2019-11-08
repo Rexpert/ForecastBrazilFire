@@ -5,18 +5,17 @@
   - ~~combine to GIF~~
 
 - Time Component Decomposition Analysis
+  - Type of Series
+    - Additive
+    - Multiplicative (log transform)
+  - Decomposition plot
   - ~~Trend: ~~
     - ~~Line charts~~
   - Seasonal & stationarity
     - ~~Seasonal plot~~
-    - ACF Plot
-    - PACF Plot
+    - ~~Correlogram~~
   - Cycle:
     - Periodogram
-  - Decomposition plot
-  - Type of Series
-    - Additive
-    - Multiplicative (log transform)
 
 - Forecasting Method
   - Naive
@@ -38,3 +37,9 @@ Method | Short-term | Trend | Seasonal | Cycle
 --- | :---: | :---: | :---: | :---: | :---:
 Naive | / | | | |
 Seasonal Naive |/ | | /|
+
+- Model Selection criteria
+  - MSE
+  - R2
+  - AIC
+  - SIC

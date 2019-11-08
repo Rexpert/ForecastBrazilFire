@@ -195,8 +195,12 @@ cmd = ['magick','convert', '-loop', '0', '-delay', '40'] + imgs + ['magicksmap.g
 subprocess.call(cmd)
 '''
 
+# finalise cleaning
+df = df.groupby(["period"]).sum()
+# df.to_csv(r'testing.csv')
+
 # Plot of forest fire
-df.groupby(["period"]).sum().plot()
+df.plot()
 plt.title("Monthly Report on Number of Brazil Forest Fire")
 plt.show()
 
@@ -220,4 +224,12 @@ plt.show()
 seed = 111
 wide_df.sample(n=4, random_state=seed).T.plot()
 plt.title("Seasonal Plot: Brazil Forest Fire (4 samples)")
+plt.show()
+
+# ACF plot / PACF plot (Correlogram)
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+
+fig, ax = plt.subplots(2, figsize=(12,6))
+ax[0] = plot_acf(df, ax=ax[0], lags=60)
+ax[1] = plot_pacf(df, ax=ax[1], lags=60)
 plt.show()
