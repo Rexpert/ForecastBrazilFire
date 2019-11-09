@@ -1,12 +1,16 @@
 from itertools import repeat
 import numpy as np
 import matplotlib.pyplot as plt
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.tsa.seasonal import seasonal_decompose
+import seaborn as sns
 import geopandas as gpd
 import pandas as pd
 import math
 import os
 import subprocess
 import glob
+sns.set()
 
 # Parse df to the function
 df = pd.read_csv("./data/amazon.csv", encoding="ISO-8859-1", thousands=".")
@@ -199,13 +203,18 @@ subprocess.call(cmd)
 df = df.groupby(["period"]).sum()
 # df.to_csv(r'testing.csv')
 
+# Decomposition plot
+result = seasonal_decompose(df, model='additive', freq=12)
+result.plot()
+plt.show()
+
 # Plot of forest fire
 df.plot()
 plt.title("Monthly Report on Number of Brazil Forest Fire")
 plt.show()
 
 # In table form
-wide_df = df.copy()
+wide_df = df.copy().reset_index()
 wide_df["year"] = wide_df.period.map(lambda t: t.year)
 wide_df["month"] = wide_df.period.map(lambda t: t.month)
 wide_df = wide_df.groupby(["year", "month"])
@@ -213,7 +222,7 @@ wide_df = wide_df.sum().unstack()
 wide_df.columns = wide_df.columns.droplevel()
 
 # Overall Trend
-by_year = df.copy()
+by_year = df.copy().reset_index()
 by_year["year"] = by_year.period.map(lambda t: t.year)
 by_year = by_year.groupby(["year"]).sum().plot()
 plt.title("Yearly Report on Number of Brazil Forest Fire")
@@ -227,9 +236,7 @@ plt.title("Seasonal Plot: Brazil Forest Fire (4 samples)")
 plt.show()
 
 # ACF plot / PACF plot (Correlogram)
-from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-
-fig, ax = plt.subplots(2, figsize=(12,6))
+fig, ax = plt.subplots(2, figsize=(12, 6))
 ax[0] = plot_acf(df, ax=ax[0], lags=60)
 ax[1] = plot_pacf(df, ax=ax[1], lags=60)
 plt.show()

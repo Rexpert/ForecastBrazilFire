@@ -5,13 +5,12 @@
   - ~~combine to GIF~~
 
 - Time Component Decomposition Analysis
-  - Type of Series
-    - Additive
-    - Multiplicative (log transform)
-  - Decomposition plot
-  - ~~Trend: ~~
+  - ~~Type of Series~~
+    - ~~Additive~~
+  - ~~Decomposition plot~~
+  - ~~Trend:~~
     - ~~Line charts~~
-  - Seasonal & stationarity
+  - ~~Seasonal & stationarity~~
     - ~~Seasonal plot~~
     - ~~Correlogram~~
   - Cycle:
