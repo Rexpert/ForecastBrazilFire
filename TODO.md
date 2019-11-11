@@ -4,7 +4,7 @@
     - ~~Moving Dot in Timeline~~
   - ~~combine to GIF~~
 
-- Time Component Decomposition Analysis
+- ~~Time Component Decomposition Analysis~~
   - ~~Type of Series~~
     - ~~Additive~~
   - ~~Decomposition plot~~
@@ -13,8 +13,6 @@
   - ~~Seasonal & stationarity~~
     - ~~Seasonal plot~~
     - ~~Correlogram~~
-  - Cycle:
-    - Periodogram
 
 - Forecasting Method
   - Naive
@@ -27,14 +25,13 @@
   - Time series regression
   - Box-Jenkins
 
-- Periodogram
-
 - Methodology & Literature review
   - In what condition, this method is better?  
 
 Method | Short-term | Trend | Seasonal | Cycle
 --- | :---: | :---: | :---: | :---: | :---:
 Naive | / | | | |
+Naive with trend | / | / | | |
 Seasonal Naive |/ | | /|
 
 - Model Selection criteria
