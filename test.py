@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.api import ExponentialSmoothing
+from statsmodels.api import OLS, add_constant
 import seaborn as sns
 import geopandas as gpd
 import pandas as pd
@@ -293,3 +294,42 @@ error = error.append(dict(method="Holt-Winter's",
                           train=MSE(train), test=MSE(test)), ignore_index=True)
 
 # Decomposition Method
+new_df = df.copy()
+new_df.columns = ["y_t"]
+
+deseasonal = new_df.iloc[:, 0] - result.seasonal.iloc[:, 0]
+fit2 = OLS(deseasonal, add_constant(list(range(len(deseasonal))))).fit()
+fit2.summary()
+new_df["F_t"] = fit2.fittedvalues + result.seasonal.iloc[:, 0]
+train = new_df[:split_index.strftime("%Y-%m")]
+test = new_df[(split_index+1).strftime("%Y-%m"):]
+
+plt.figure(figsize=(16, 8))
+new_df["y_t"].plot()
+test["F_t"].plot()
+plt.show()
+
+error = error.append(dict(method="Decomposition", train=MSE(
+    train), test=MSE(test)), ignore_index=True)
+
+# Time Series Regression
+new_df = df.copy()
+new_df.columns = ["y_t"]
+
+dummies = pd.get_dummies(df.index.month, drop_first=True)
+dummies["t"] = range(len(df))
+dummies.index = new_df.index
+
+fit3 = OLS(new_df, add_constant(dummies)).fit()
+fit3.summary()
+
+new_df["F_t"] = fit3.fittedvalues
+train = new_df[:split_index.strftime("%Y-%m")]
+test = new_df[(split_index+1).strftime("%Y-%m"):]
+
+new_df["y_t"].plot()
+test["F_t"].plot()
+plt.show()
+
+error = error.append(dict(method="Time-Series Regression",
+                          train=MSE(train), test=MSE(test)), ignore_index=True)

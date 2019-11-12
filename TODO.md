@@ -19,9 +19,9 @@
     - ~~Seasonal Naive Method~~
   - ~~Exponential Smoothing~~
     - ~~Holt-Winter's~~
-  - Decomposition
-  - Time series regression
-    - Seasonal Time Series Regression
+  - ~~Decomposition~~
+  - ~~Time series regression~~
+    - ~~Seasonal Time Series Regression~~
   - ARIMA
 
 - Methodology & Literature review
