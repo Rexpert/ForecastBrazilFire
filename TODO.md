@@ -15,24 +15,35 @@
     - ~~Correlogram~~
 
 - Forecasting Method
-  - Naive
-    - Seasonal Naive Method
-  - Average
-    - Moving Average
-  - Exponential Smoothing
-    - Simple + seasonal adjusted
-    - Double Exponential Smoothing
+  - ~~Naive~~
+    - ~~Seasonal Naive Method~~
+  - ~~Exponential Smoothing~~
+    - ~~Holt-Winter's~~
+  - Decomposition
   - Time series regression
-  - Box-Jenkins
+    - Seasonal Time Series Regression
+  - ARIMA
 
 - Methodology & Literature review
   - In what condition, this method is better?  
 
-Method | Short-term | Trend | Seasonal | Cycle
---- | :---: | :---: | :---: | :---: | :---:
+Method | Short-term | Trend | Seasonal 
+--- | :---: | :---: | :---: | :---: 
 Naive | / | | | |
-Naive with trend | / | / | | |
-Seasonal Naive |/ | | /|
+Naive with trend / Drift | / | / | |
+Seasonal Naive | / | | / |
+Average Forecast | / | | |
+Average Change Model | / | | |
+Average Percent Change Model | / | / | |
+Single Exponential Smoothing | | | |
+Double Exponential Smoothing | | / | |
+Holt's Method | | / | |
+ARRES | | | |
+Holt-Winter's | | / | / |
+Decomposition | | / | / |
+Time Series Regression | | / | |
+Seasonal Time Series Regression | | / | / |
+ARIMA | | / | / |
 
 - Model Selection criteria
   - MSE

@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.seasonal import seasonal_decompose
+from statsmodels.tsa.api import ExponentialSmoothing
 import seaborn as sns
 import geopandas as gpd
 import pandas as pd
@@ -240,3 +241,55 @@ fig, ax = plt.subplots(2, figsize=(12, 6))
 ax[0] = plot_acf(df, ax=ax[0], lags=60)
 ax[1] = plot_pacf(df, ax=ax[1], lags=60)
 plt.show()
+
+# Train-Test Split
+split_ratio = 0.8  # Train portion
+split_index = df.iloc[round(len(df) * split_ratio)].name
+
+
+def MSE(a):
+    return np.square(np.subtract(a["y_t"], a["F_t"])).mean()
+
+
+error = pd.DataFrame()
+
+# Naive: Seasonal Naive
+new_df = df.copy()
+new_df.columns = ["y_t"]
+new_df["F_t"] = new_df["y_t"].shift(12)
+new_df = new_df.dropna()
+
+train = new_df[:split_index.strftime("%Y-%m")]
+test = new_df[(split_index+1).strftime("%Y-%m"):]
+plt.figure(figsize=(16, 8))
+new_df["y_t"].plot(label="Original Data")
+test["F_t"].plot(label="Seasonal Naive")
+plt.show()
+
+error = error.append(dict(method="Seasonal Naive", train=MSE(
+    train), test=MSE(test)), ignore_index=True)
+
+# Exponential Smoothing: Holt-Winter's
+new_df = df.copy()
+new_df.columns = ["y_t"]
+
+train = new_df[:split_index.strftime("%Y-%m")]
+test = new_df[(split_index+1).strftime("%Y-%m"):]
+
+fit1 = ExponentialSmoothing(np.asarray(
+    train['y_t']), seasonal_periods=12, trend='add', seasonal='add',).fit()
+
+train["F_t"] = fit1.fittedvalues
+test["F_t"] = fit1.forecast(len(test))
+
+plt.figure(figsize=(16, 8))
+new_df["y_t"].plot()
+test["F_t"].plot()
+plt.show()
+
+print(fit1.summary())
+
+error = error.append(dict(method="Holt-Winter's",
+                          train=MSE(train), test=MSE(test)), ignore_index=True)
+
+# Decomposition Method
