@@ -245,7 +245,7 @@ plt.show()
 
 # Train-Test Split
 split_ratio = 0.8  # Train portion
-split_index = df.iloc[round(len(df) * split_ratio)].name
+split_index = pd.Period("2016-12", "M")
 
 
 def MSE(a):
@@ -267,8 +267,11 @@ new_df["y_t"].plot(label="Original Data")
 test["F_t"].plot(label="Seasonal Naive")
 plt.show()
 
-error = error.append(dict(method="Seasonal Naive", train=MSE(
-    train), test=MSE(test)), ignore_index=True)
+method = "Seasonal Naive"
+if method in error["method"].values:
+    error = error[error.method != method]
+error = error.append(dict(method=method, train=MSE(train),
+                          test=MSE(test)), ignore_index=True)
 
 # Exponential Smoothing: Holt-Winter's
 new_df = df.copy()
@@ -290,27 +293,42 @@ plt.show()
 
 print(fit1.summary())
 
-error = error.append(dict(method="Holt-Winter's",
-                          train=MSE(train), test=MSE(test)), ignore_index=True)
+method = "Holt-Winter's"
+if method in error["method"].values:
+    error = error[error.method != method]
+error = error.append(dict(method=method, train=MSE(train),
+                          test=MSE(test)), ignore_index=True)
 
 # Decomposition Method
 new_df = df.copy()
 new_df.columns = ["y_t"]
 
-deseasonal = new_df.iloc[:, 0] - result.seasonal.iloc[:, 0]
-fit2 = OLS(deseasonal, add_constant(list(range(len(deseasonal))))).fit()
-fit2.summary()
-new_df["F_t"] = fit2.fittedvalues + result.seasonal.iloc[:, 0]
 train = new_df[:split_index.strftime("%Y-%m")]
 test = new_df[(split_index+1).strftime("%Y-%m"):]
+
+deseasonal = new_df.iloc[:, 0] - result.seasonal.iloc[:, 0]
+
+deseasonal.plot()
+plt.show()
+
+train["deseasonal"] = deseasonal[:split_index.strftime("%Y-%m")]
+fit2 = OLS(train["deseasonal"], add_constant(range(len(train)))).fit()
+fit2.summary()
+
+train["F_t"] = fit2.fittedvalues + result.seasonal.iloc[:len(train), 0]
+test["F_t"] = fit2.predict(add_constant(
+    range(len(train), len(new_df)))) + result.seasonal.iloc[len(train):, 0]
 
 plt.figure(figsize=(16, 8))
 new_df["y_t"].plot()
 test["F_t"].plot()
 plt.show()
 
-error = error.append(dict(method="Decomposition", train=MSE(
-    train), test=MSE(test)), ignore_index=True)
+method = "Decomposition"
+if method in error["method"].values:
+    error = error[error.method != method]
+error = error.append(dict(method=method, train=MSE(train),
+                          test=MSE(test)), ignore_index=True)
 
 # Time Series Regression
 new_df = df.copy()
@@ -320,16 +338,24 @@ dummies = pd.get_dummies(df.index.month, drop_first=True)
 dummies["t"] = range(len(df))
 dummies.index = new_df.index
 
-fit3 = OLS(new_df, add_constant(dummies)).fit()
-fit3.summary()
-
-new_df["F_t"] = fit3.fittedvalues
 train = new_df[:split_index.strftime("%Y-%m")]
 test = new_df[(split_index+1).strftime("%Y-%m"):]
+train_dummy = dummies[:split_index.strftime("%Y-%m")]
+test_dummy = dummies[(split_index+1).strftime("%Y-%m"):]
 
+fit3 = OLS(train, add_constant(train_dummy)).fit()
+fit3.summary()
+
+train["F_t"] = fit3.fittedvalues
+test["F_t"] = fit3.predict(add_constant(test_dummy))
+
+plt.figure(figsize=(16, 8))
 new_df["y_t"].plot()
 test["F_t"].plot()
 plt.show()
 
-error = error.append(dict(method="Time-Series Regression",
-                          train=MSE(train), test=MSE(test)), ignore_index=True)
+method = "Time-Series Regression"
+if method in error["method"].values:
+    error = error[error.method != method]
+error = error.append(dict(method=method, train=MSE(train),
+                          test=MSE(test)), ignore_index=True)
