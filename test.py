@@ -1,25 +1,28 @@
-from itertools import repeat
-import numpy as np
-import matplotlib.pyplot as plt
-from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-from statsmodels.tsa.seasonal import seasonal_decompose
-from statsmodels.tsa.api import ExponentialSmoothing
-from statsmodels.api import OLS, add_constant
-import seaborn as sns
-import geopandas as gpd
-import pandas as pd
 import math
-import os
-import subprocess
-import glob
+from glob import glob
+from itertools import repeat
+from os.path import join
+from subprocess import call
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from geopandas import read_file
+from IPython.display import display
+from statsmodels.api import OLS, add_constant
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.tsa.api import ExponentialSmoothing
+from statsmodels.tsa.seasonal import seasonal_decompose
+
 sns.set()
 
 # Parse df to the function
 df = pd.read_csv("./data/amazon.csv", encoding="ISO-8859-1", thousands=".")
 
 # Read map data: shape file for Brazil
-map_df = gpd.read_file(
-    "./data/brazil-shapefile/Central-West Region_AL3-AL4.shp")
+map_df = read_file("./data/brazil-shapefile/Central-West Region_AL3-AL4.shp")
+map_df = map_df.iloc[5:, :]
 
 '''# Temporary Disable
 # Understand the data structure
@@ -67,7 +70,6 @@ df = df[["period", "state", "number"]]
 
 
 # 3. Duplicate Data
-map_df = map_df.iloc[5:, :]
 state_por = map_df.iloc[:, 2]
 state_eng = df.iloc[:, 2].unique()
 (len(state_por), len(state_eng))  # different length
@@ -184,7 +186,7 @@ for year in year_list :
         color = '#69549E' if n % 2 else '#E8E7EF'
         plt.hlines(-36, x_coord, x_coord + 2, colors=color, lw=5, clip_on=False, zorder=100)
 
-    filepath = os.path.join("maps", str(year)+'.png')
+    filepath = join("maps", str(year)+'.png')
     chart = fig.get_figure()
     chart.savefig(filepath, dpi=300)
 
@@ -195,10 +197,10 @@ print("done")
 
 '''# Temporary Disable
 # Output images to Gif using image magick
-imgs = glob.glob('*.png')
+imgs = glob('*.png')
 
 cmd = ['magick','convert', '-loop', '0', '-delay', '40'] + imgs + ['magicksmap.gif']
-subprocess.call(cmd)
+call(cmd)
 '''
 
 # finalise cleaning
@@ -244,7 +246,6 @@ ax[1] = plot_pacf(df, ax=ax[1], lags=60)
 plt.show()
 
 # Train-Test Split
-split_ratio = 0.8  # Train portion
 split_index = pd.Period("2016-12", "M")
 
 
@@ -296,8 +297,7 @@ print(fit1.summary())
 method = "Holt-Winter's"
 if method in error["method"].values:
     error = error[error.method != method]
-error = error.append(dict(method=method, train=MSE(train),
-                          test=MSE(test)), ignore_index=True)
+error = error.append(dict(method=method, train=MSE(train),test=MSE(test)), ignore_index=True)
 
 # Decomposition Method
 new_df = df.copy()
@@ -327,8 +327,7 @@ plt.show()
 method = "Decomposition"
 if method in error["method"].values:
     error = error[error.method != method]
-error = error.append(dict(method=method, train=MSE(train),
-                          test=MSE(test)), ignore_index=True)
+error = error.append(dict(method=method, train=MSE(train),test=MSE(test)), ignore_index=True)
 
 # Time Series Regression
 new_df = df.copy()
@@ -357,5 +356,4 @@ plt.show()
 method = "Time-Series Regression"
 if method in error["method"].values:
     error = error[error.method != method]
-error = error.append(dict(method=method, train=MSE(train),
-                          test=MSE(test)), ignore_index=True)
+error = error.append(dict(method=method, train=MSE(train),test=MSE(test)), ignore_index=True)
