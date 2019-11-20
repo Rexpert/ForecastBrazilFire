@@ -1,4 +1,5 @@
 import math
+import warnings
 from glob import glob
 from itertools import repeat
 from os.path import join
@@ -15,6 +16,7 @@ from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.api import ExponentialSmoothing
 from statsmodels.tsa.seasonal import seasonal_decompose
 
+warnings.filterwarnings('ignore')
 sns.set()
 
 # Parse df to the function
@@ -297,7 +299,8 @@ print(fit1.summary())
 method = "Holt-Winter's"
 if method in error["method"].values:
     error = error[error.method != method]
-error = error.append(dict(method=method, train=MSE(train),test=MSE(test)), ignore_index=True)
+error = error.append(dict(method=method, train=MSE(train),
+                          test=MSE(test)), ignore_index=True)
 
 # Decomposition Method
 new_df = df.copy()
@@ -327,7 +330,8 @@ plt.show()
 method = "Decomposition"
 if method in error["method"].values:
     error = error[error.method != method]
-error = error.append(dict(method=method, train=MSE(train),test=MSE(test)), ignore_index=True)
+error = error.append(dict(method=method, train=MSE(train),
+                          test=MSE(test)), ignore_index=True)
 
 # Time Series Regression
 new_df = df.copy()
@@ -356,4 +360,5 @@ plt.show()
 method = "Time-Series Regression"
 if method in error["method"].values:
     error = error[error.method != method]
-error = error.append(dict(method=method, train=MSE(train),test=MSE(test)), ignore_index=True)
+error = error.append(dict(method=method, train=MSE(train),
+                          test=MSE(test)), ignore_index=True)
