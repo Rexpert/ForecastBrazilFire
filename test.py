@@ -367,17 +367,24 @@ error = error.append(dict(method=method, train=MSE(train),
 # ARIMA
 evaluation = pd.DataFrame(columns=["model", "AIC", "BIC"])
 
-for p in range(0,4):
-    for d in range(0,4):
-        for q in range(0,4):
+new_df = df.copy()
+new_df.columns = ["y_t"]
+
+train = new_df[:split_index.strftime("%Y-%m")]
+test = new_df[(split_index+1).strftime("%Y-%m"):]
+
+for p in range(0, 4):
+    for d in range(0, 4):
+        for q in range(0, 4):
             try:
                 model = ARIMA(train["y_t"], (p, d, q)).fit()
-                name = "ARIMA " + str((p,d,q))
+                name = "ARIMA " + str((p, d, q))
                 aic = model.aic
                 bic = model.bic
                 if name in evaluation["model"].values:
                     evaluation = evaluation[evaluation.model != name]
-                evaluation = evaluation.append(dict(model=name, AIC=aic, BIC=bic), ignore_index=True)
+                evaluation = evaluation.append(
+                    dict(model=name, AIC=aic, BIC=bic), ignore_index=True)
             except:
                 continue
 print("done")
