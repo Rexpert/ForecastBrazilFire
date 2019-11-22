@@ -22,7 +22,7 @@
   - ~~Decomposition~~
   - ~~Time series regression~~
     - ~~Seasonal Time Series Regression~~
-  - ARIMA
+  - ~~ARIMA~~
 
 - Methodology & Literature review
   - In what condition, this method is better?  
