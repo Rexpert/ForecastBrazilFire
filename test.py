@@ -14,6 +14,7 @@ from IPython.display import display
 from statsmodels.api import OLS, add_constant
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.api import ExponentialSmoothing
+from statsmodels.tsa.arima_model import ARIMA
 from statsmodels.tsa.seasonal import seasonal_decompose
 
 warnings.filterwarnings('ignore')
@@ -358,6 +359,44 @@ test["F_t"].plot()
 plt.show()
 
 method = "Time-Series Regression"
+if method in error["method"].values:
+    error = error[error.method != method]
+error = error.append(dict(method=method, train=MSE(train),
+                          test=MSE(test)), ignore_index=True)
+
+# ARIMA
+evaluation = pd.DataFrame(columns=["model", "AIC", "BIC"])
+
+for p in range(0,4):
+    for d in range(0,4):
+        for q in range(0,4):
+            try:
+                model = ARIMA(train["y_t"], (p, d, q)).fit()
+                name = "ARIMA " + str((p,d,q))
+                aic = model.aic
+                bic = model.bic
+                if name in evaluation["model"].values:
+                    evaluation = evaluation[evaluation.model != name]
+                evaluation = evaluation.append(dict(model=name, AIC=aic, BIC=bic), ignore_index=True)
+            except:
+                continue
+print("done")
+
+
+index = [evaluation.AIC.idxmin(), evaluation.BIC.idxmin()]
+evaluation.iloc[np.unique(index), :]
+
+model = ARIMA(train["y_t"], (2, 0, 3)).fit()
+
+train["F_t"] = model.fittedvalues
+test["F_t"] = model.predict(test.index[0], test.index[-1])
+
+plt.figure(figsize=(16, 8))
+new_df["y_t"].plot()
+test["F_t"].plot()
+plt.show()
+
+method = "ARIMA"
 if method in error["method"].values:
     error = error[error.method != method]
 error = error.append(dict(method=method, train=MSE(train),
