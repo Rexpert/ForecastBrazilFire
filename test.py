@@ -16,6 +16,7 @@ from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.api import ExponentialSmoothing
 from statsmodels.tsa.arima_model import ARIMA
 from statsmodels.tsa.seasonal import seasonal_decompose
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 warnings.filterwarnings('ignore')
 sns.set()
@@ -284,8 +285,7 @@ new_df.columns = ["y_t"]
 train = new_df[:split_index.strftime("%Y-%m")]
 test = new_df[(split_index+1).strftime("%Y-%m"):]
 
-fit1 = ExponentialSmoothing(np.asarray(
-    train['y_t']), seasonal_periods=12, trend='add', seasonal='add',).fit()
+fit1 = ExponentialSmoothing(np.asarray(train['y_t']), trend='add', seasonal='add', seasonal_periods=12).fit()
 
 train["F_t"] = fit1.fittedvalues
 test["F_t"] = fit1.forecast(len(test))
@@ -373,27 +373,40 @@ new_df.columns = ["y_t"]
 train = new_df[:split_index.strftime("%Y-%m")]
 test = new_df[(split_index+1).strftime("%Y-%m"):]
 
-for p in range(0, 4):
-    for d in range(0, 4):
-        for q in range(0, 4):
-            try:
-                model = ARIMA(train["y_t"], (p, d, q)).fit()
-                name = "ARIMA " + str((p, d, q))
-                aic = model.aic
-                bic = model.bic
-                if name in evaluation["model"].values:
-                    evaluation = evaluation[evaluation.model != name]
-                evaluation = evaluation.append(
-                    dict(model=name, AIC=aic, BIC=bic), ignore_index=True)
-            except:
-                continue
+'''# SARIMA
+p_range = range(0,4)
+d_range = range(0,2)
+q_range = range(0,4)
+s = 12
+for p in p_range:
+    for d in d_range:
+        for q in q_range:
+            for P in p_range:
+                for D in d_range:
+                    for Q in q_range:
+                        try:
+                            model = SARIMAX(train["y_t"], order=(p,d,q), seasonal_order=(P,D,Q,s)).fit()
+                            name = "SARIMA " + str((p, d, q)) + str((P,D,Q)) + "[" + str(s) + "]"
+                            aic = model.aic
+                            bic = model.bic
+                            if name in evaluation["model"].values:
+                                evaluation = evaluation[evaluation.model != name]
+                            evaluation = evaluation.append(
+                                dict(model=name, AIC=aic, BIC=bic), ignore_index=True)
+                        except:
+                            continue
 print("done")
 
+evaluation.to_csv("evaluation.csv", index=False)
+'''
+
+evaluation = pd.read_csv("evaluation.csv")
 
 index = [evaluation.AIC.idxmin(), evaluation.BIC.idxmin()]
 evaluation.iloc[np.unique(index), :]
 
-model = ARIMA(train["y_t"], (2, 0, 3)).fit()
+# SARIMA (1,1,1)(0,1,1)[12]
+model = SARIMAX(train["y_t"], order=(1,1,1), seasonal_order=(0,1,1,12)).fit()
 
 train["F_t"] = model.fittedvalues
 test["F_t"] = model.predict(test.index[0], test.index[-1])
@@ -403,7 +416,24 @@ new_df["y_t"].plot()
 test["F_t"].plot()
 plt.show()
 
-method = "ARIMA"
+method = "SARIMA (1,1,1)(0,1,1)[12]"
+if method in error["method"].values:
+    error = error[error.method != method]
+error = error.append(dict(method=method, train=MSE(train),
+                          test=MSE(test)), ignore_index=True)
+
+# SARIMA (2,1,1)(1,1,2)[12]
+model = SARIMAX(train["y_t"], order=(2,1,1), seasonal_order=(1,1,2,12)).fit()
+
+train["F_t"] = model.fittedvalues
+test["F_t"] = model.predict(test.index[0], test.index[-1])
+
+plt.figure(figsize=(16, 8))
+new_df["y_t"].plot()
+test["F_t"].plot()
+plt.show()
+
+method = "SARIMA (2,1,1)(1,1,2)[12]"
 if method in error["method"].values:
     error = error[error.method != method]
 error = error.append(dict(method=method, train=MSE(train),
