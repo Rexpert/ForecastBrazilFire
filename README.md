@@ -1,5 +1,6 @@
 # ForecastBrazilFire
 This repository stored all resources to deploy our Forecasting subject's academic paper.
+You can view the [jupyter notebook](https://nbviewer.jupyter.org/github/Rexpert/ForecastBrazilFire/blob/master/app.ipynb) analysis via `nbviewer`
 
 ## Project Structure
 Below showing the details and purposes of some important files and folders in this project:
